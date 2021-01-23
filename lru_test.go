@@ -2,7 +2,6 @@ package gcache
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 )
@@ -100,30 +99,22 @@ func TestBasicLRUIncrementer(t *testing.T) {
 		t.Error(fmt.Errorf("v is nil"))
 		t.Fatal()
 	}
-	newV, ok := v.(int)
+	vNew, ok := v.(int)
 	if !ok {
-		t.Error(fmt.Errorf("newV is not int"))
+		t.Error(fmt.Errorf("vNew is not int"))
 		t.Fatal()
 	}
-	if newV != 2 {
+	if vNew != 2 {
 		t.Error("increment int failed")
 		t.Fatal()
 	}
-
-}
-
-func forEachValue(ifaceSlice interface{}, f func(i int, val interface{})) {
-	v := reflect.ValueOf(ifaceSlice)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
+	vFromC, err := gc.Get("some-key")
+	if err != nil {
+		t.Error(err)
+		t.Fatal()
 	}
-	if v.Kind() != reflect.Slice {
-		panic(fmt.Errorf("forEachValue: expected slice type, found %q", v.Kind().String()))
-	}
-
-	for i := 0; i < v.Len(); i++ {
-		val := v.Index(i).Interface()
-		f(i, val)
+	if vFromC != vNew {
+		t.Error(fmt.Errorf("increment in cache by int64 failed, v:%v, vNew:%v", vNew, vFromC))
 	}
 }
 
@@ -257,7 +248,7 @@ func TestLRUIncrementer(t *testing.T) {
 				t.Error(err)
 				t.Fatal()
 			}
-
+			// ugly hack to compare different types
 			if fmt.Sprintf("%v", vFromC) != fmt.Sprintf("%v", vNew) {
 				t.Error(fmt.Errorf("increment in cache by int64 failed, v:%v, vNew:%v", vNew, vFromC))
 			}

@@ -57,49 +57,36 @@ func newLRUIncrementer(c *LRUCache) *LRUIncrementer {
 	return i
 }
 
-// TODO: change to core implementation and remove custom lock
-func (i *LRUIncrementer) Increment(k interface{}, n int64) (interface{}, error) {
-	i.lock.Lock()
-	defer i.lock.Unlock()
-	v, err := i.cache.Get(k)
-	if err != nil {
+func (i *LRUIncrementer) Increment(key interface{}, n int64) (interface{}, error) {
+	i.cache.mu.Lock()
+
+	item, found := i.cache.items[key]
+	if !found {
+		i.cache.mu.Unlock()
 		return nil, KeyNotFoundError
 	}
+
+	it := item.Value.(*lruItem)
+	if it.IsExpired(nil) {
+		i.cache.removeElement(item)
+		i.cache.mu.Unlock()
+		return nil, KeyNotFoundError
+	}
+
+	v := it.value
+
 	vNew, err := incrementValue(v, n)
 	if err != nil {
+		i.cache.mu.Unlock()
 		return nil, err
 	}
-	return vNew, i.cache.Set(k, vNew)
-}
 
-//func (i *LRUIncrementer) Increment(key interface{}, n int64) (interface{}, error) {
-//	i.cache.mu.Lock()
-//
-//	item, found := i.cache.items[key]
-//	if !found {
-//		i.cache.mu.Unlock()
-//		return nil, KeyNotFoundError
-//	}
-//
-//	it := item.Value.(*lruItem)
-//	if it.IsExpired(nil) {
-//		i.cache.removeElement(item)
-//		i.cache.mu.Unlock()
-//		return nil, KeyNotFoundError
-//	}
-//
-//	v := it.value
-//
-//	vNew, err := incrementValue(v, n)
-//	if err != nil {
-//		i.cache.mu.Unlock()
-//		return nil, err
-//	}
-//
-//	i.cache.evictList.MoveToBack(item)
-//	it.key = vNew
-//	i.cache.items[key] = it.value.(*list.Element)
-//	i.cache.mu.Unlock()
-//
-//	return vNew, nil
-//}
+	_, err = i.cache.set(key, vNew)
+	if err != nil {
+		i.cache.mu.Unlock()
+		return nil, err
+	}
+	i.cache.mu.Unlock()
+
+	return vNew, nil
+}
