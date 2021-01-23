@@ -21,8 +21,8 @@ func TestLoadingLRUGet(t *testing.T) {
 
 func TestLRULength(t *testing.T) {
 	gc := buildTestLoadingCache(t, TYPE_LRU, 1000, loader)
-	gc.Get("test1")
-	gc.Get("test2")
+	_, _ = gc.Get("test1")
+	_, _ = gc.Get("test2")
 	length := gc.Len(true)
 	expectedLength := 2
 	if length != expectedLength {
@@ -52,8 +52,8 @@ func TestLRUHas(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
-			gc.Get("test1")
-			gc.Get("test2")
+			_, _ = gc.Get("test1")
+			_, _ = gc.Get("test2")
 
 			if gc.Has("test0") {
 				t.Fatal("should not have test0")
@@ -78,4 +78,18 @@ func TestLRUHas(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLRUIncrementer(t *testing.T) {
+	gc := buildTestLoadingCacheWithExpiration(t, TYPE_LRU, 2, 10*time.Millisecond)
+	// integer
+	err := gc.Set("some-key", 1)
+	if err != nil {
+		t.Error(err)
+	}
+	v, err := gc.Increment("some-key", 1)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Print(v)
 }
