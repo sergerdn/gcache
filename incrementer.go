@@ -9,7 +9,7 @@ type BaseLRUIncrementer interface {
 	Increment(k string, n int64) (interface{}, error)
 }
 
-func incrementValue(v interface{}, n int64) error {
+func incrementValue(v interface{}, n int64) (interface{}, error) {
 	switch v.(type) {
 	case int:
 		v = v.(int) + int(n)
@@ -38,9 +38,9 @@ func incrementValue(v interface{}, n int64) error {
 	case float64:
 		v = v.(float64) + float64(n)
 	default:
-		return fmt.Errorf("the value %v is not an integer", v)
+		return nil, fmt.Errorf("the value %v is not an integer", v)
 	}
-	return nil
+	return v, nil
 }
 
 // make sure that LRUIncrementer implements BaseLRUIncrementer
@@ -75,13 +75,14 @@ func (i *LRUIncrementer) Increment(k string, n int64) (interface{}, error) {
 		return nil, fmt.Errorf("item %s not found", k)
 	}
 
-	err := incrementValue(&v, n)
+	vNew, err := incrementValue(it.value, n)
+
 	if err != nil {
 		i.cache.mu.Unlock()
 		return nil, err
 	}
 
-	i.cache.items[k].Value = v
+	i.cache.items[k].Value = vNew
 	i.cache.mu.Unlock()
-	return v, nil
+	return vNew, nil
 }

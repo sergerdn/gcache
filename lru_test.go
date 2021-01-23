@@ -82,6 +82,7 @@ func TestLRUHas(t *testing.T) {
 
 func TestLRUIncrementer(t *testing.T) {
 	gc := buildTestLoadingCacheWithExpiration(t, TYPE_LRU, 2, 10*time.Millisecond)
+
 	// integer
 	err := gc.Set("some-key", 1)
 	if err != nil {
@@ -90,6 +91,21 @@ func TestLRUIncrementer(t *testing.T) {
 	v, err := gc.Increment("some-key", 1)
 	if err != nil {
 		t.Error(err)
+		t.Fatal()
+	}
+	if v == nil {
+		t.Error(fmt.Errorf("v is nil"))
+		t.Fatal()
+	}
+	newV, ok := v.(int)
+	if !ok {
+		t.Error(fmt.Errorf("newV is not int"))
+		t.Fatal()
+	}
+
+	if newV != 2 {
+		t.Error("increment int failed")
+		t.Fatal()
 	}
 	fmt.Print(v)
 }
