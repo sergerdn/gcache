@@ -249,7 +249,7 @@ func TestLRUIncrementer(t *testing.T) {
 				t.Fatal()
 			}
 			// ugly hack to compare different types
-			if fmt.Sprintf("%v", vFromC) != fmt.Sprintf("%v", vNew) {
+			if vFromC != vNew {
 				t.Error(fmt.Errorf("increment in cache by int64 failed, v:%v, vNew:%v", vNew, vFromC))
 			}
 		})
