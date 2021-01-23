@@ -360,7 +360,7 @@ func (c *ARC) Len(checkExpired bool) int {
 }
 
 // Increment an item
-func (c *ARC) Increment(k string, n int64) (interface{}, error) {
+func (c *ARC) Increment(k interface{}, n int64) (interface{}, error) {
 	return nil, errors.New("method not implemented")
 }
 

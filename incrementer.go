@@ -6,10 +6,10 @@ import (
 )
 
 type BaseIncrementer interface {
-	Increment(k string, n int64) (interface{}, error)
+	Increment(k interface{}, n int64) (interface{}, error)
 }
 
-func incrementValue(v interface{}, n int64) (interface{}, error) {
+func incrementValue(v interface{}, n int64) (result interface{}, err error) {
 	switch v.(type) {
 	case int:
 		v = v.(int) + int(n)
@@ -40,7 +40,8 @@ func incrementValue(v interface{}, n int64) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("the value %v is not an integer", v)
 	}
-	return v, nil
+	// restore original interface
+	return v.(interface{}), nil
 }
 
 // make sure that LRUIncrementer implements BaseIncrementer
@@ -57,18 +58,48 @@ func newLRUIncrementer(c *LRUCache) *LRUIncrementer {
 }
 
 // TODO: change to core implementation and remove custom lock
-func (i *LRUIncrementer) Increment(k string, n int64) (interface{}, error) {
+func (i *LRUIncrementer) Increment(k interface{}, n int64) (interface{}, error) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	v, err := i.cache.Get(k)
 	if err != nil {
-		i.lock.Unlock()
-		return nil, fmt.Errorf("item %s not found", k)
+		return nil, KeyNotFoundError
 	}
 	vNew, err := incrementValue(v, n)
-
 	if err != nil {
 		return nil, err
 	}
 	return vNew, i.cache.Set(k, vNew)
 }
+
+//func (i *LRUIncrementer) Increment(key interface{}, n int64) (interface{}, error) {
+//	i.cache.mu.Lock()
+//
+//	item, found := i.cache.items[key]
+//	if !found {
+//		i.cache.mu.Unlock()
+//		return nil, KeyNotFoundError
+//	}
+//
+//	it := item.Value.(*lruItem)
+//	if it.IsExpired(nil) {
+//		i.cache.removeElement(item)
+//		i.cache.mu.Unlock()
+//		return nil, KeyNotFoundError
+//	}
+//
+//	v := it.value
+//
+//	vNew, err := incrementValue(v, n)
+//	if err != nil {
+//		i.cache.mu.Unlock()
+//		return nil, err
+//	}
+//
+//	i.cache.evictList.MoveToBack(item)
+//	it.key = vNew
+//	i.cache.items[key] = it.value.(*list.Element)
+//	i.cache.mu.Unlock()
+//
+//	return vNew, nil
+//}

@@ -284,7 +284,7 @@ func (c *LRUCache) Len(checkExpired bool) int {
 }
 
 // Increment an item
-func (c *LRUCache) Increment(k string, n int64) (interface{}, error) {
+func (c *LRUCache) Increment(k interface{}, n int64) (interface{}, error) {
 	return c.incrementer.Increment(k, n)
 }
 

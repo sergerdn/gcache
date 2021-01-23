@@ -313,7 +313,7 @@ func (c *LFUCache) Len(checkExpired bool) int {
 }
 
 // Increment an item
-func (c *LFUCache) Increment(k string, n int64) (interface{}, error) {
+func (c *LFUCache) Increment(k interface{}, n int64) (interface{}, error) {
 	return nil, errors.New("method not implemented")
 }
 
